@@ -47,12 +47,16 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -101,6 +105,9 @@ private val pedidosDemo = listOf(
     Pedido("PED-002", "Empresa Tech Chile Ltda", "Av. Providencia 1234, Of. 502", "EN_RUTA", "\$120.000"),
     Pedido("PED-003", "Comercial Central InsertCode", "Av. Andrés Bello 2680, Las Condes", "ENTREGADO", "\$180.000")
 )
+
+// Lista de pedidos en memoria: parte con los de demostración y permite agregar nuevos
+private val pedidosLista = mutableStateListOf<Pedido>().apply { addAll(pedidosDemo) }
 
 private val productosDemo = listOf(
     Producto("PROD-01", "SOFTWARE", "Licencia Dashboard Web Sales", "Sistema centralizado de ventas, inventario e indicadores.", "\$450.000"),
@@ -217,7 +224,14 @@ fun DashboardScreen(navController: NavController) {
             }
             item {
                 Button(
-                    onClick = { navController.navigate(Rutas.PEDIDOS) },
+                    onClick = {
+                        // Misma navegación que la barra inferior, para poder volver al Dashboard
+                        navController.navigate(Rutas.PEDIDOS) {
+                            popUpTo(Rutas.INICIO) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(52.dp)
@@ -276,7 +290,14 @@ fun DashboardScreen(navController: NavController) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { navController.navigate(Rutas.PEDIDOS) }
+                            .clickable {
+                                // Misma navegación que la barra inferior, para poder volver al Dashboard
+                                navController.navigate(Rutas.PEDIDOS) {
+                                    popUpTo(Rutas.INICIO) { saveState = true }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            }
                             .padding(vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -288,7 +309,14 @@ fun DashboardScreen(navController: NavController) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { navController.navigate(Rutas.CATALOGO) }
+                            .clickable {
+                                // Misma navegación que la barra inferior, para poder volver al Dashboard
+                                navController.navigate(Rutas.CATALOGO) {
+                                    popUpTo(Rutas.INICIO) { saveState = true }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            }
                             .padding(vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -308,6 +336,11 @@ fun DashboardScreen(navController: NavController) {
 // ---------------------------------------------------------------------
 @Composable
 fun PedidosScreen(navController: NavController) {
+    var mostrarFormulario by remember { mutableStateOf(false) }
+    var cliente by remember { mutableStateOf("") }
+    var direccion by remember { mutableStateOf("") }
+    var total by remember { mutableStateOf("") }
+
     Scaffold(topBar = { CabeceraApp(navController) }, bottomBar = { BarraInferior(Rutas.PEDIDOS, navController, 0) }) { padding ->
         LazyColumn(
             modifier = Modifier
@@ -319,7 +352,19 @@ fun PedidosScreen(navController: NavController) {
             item {
                 Encabezado("Pedidos", "Seguimiento de pedidos en terreno")
             }
-            items(pedidosDemo) { pedido ->
+            item {
+                Button(
+                    onClick = { mostrarFormulario = true },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp)
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Agregar Pedido")
+                }
+            }
+            items(pedidosLista) { pedido ->
                 TarjetaOscura {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
@@ -347,6 +392,63 @@ fun PedidosScreen(navController: NavController) {
                 }
             }
         }
+    }
+
+    if (mostrarFormulario) {
+        val totalNumero = total.filter { it.isDigit() }
+        val formularioValido = cliente.isNotBlank() && direccion.isNotBlank() && totalNumero.isNotEmpty()
+        AlertDialog(
+            onDismissRequest = { mostrarFormulario = false },
+            title = { Text("Nuevo pedido") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = cliente,
+                        onValueChange = { cliente = it },
+                        label = { Text("Cliente") },
+                        singleLine = true
+                    )
+                    OutlinedTextField(
+                        value = direccion,
+                        onValueChange = { direccion = it },
+                        label = { Text("Dirección") },
+                        singleLine = true
+                    )
+                    OutlinedTextField(
+                        value = total,
+                        onValueChange = { total = it },
+                        label = { Text("Total (CLP)") },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = formularioValido,
+                    onClick = {
+                        val numero = pedidosLista.size + 1
+                        val montoConPuntos = totalNumero.reversed().chunked(3).joinToString(".").reversed()
+                        pedidosLista.add(
+                            Pedido(
+                                id = "PED-%03d".format(numero),
+                                cliente = cliente.trim(),
+                                direccion = direccion.trim(),
+                                estado = "PENDIENTE",
+                                total = "\$" + montoConPuntos
+                            )
+                        )
+                        cliente = ""
+                        direccion = ""
+                        total = ""
+                        mostrarFormulario = false
+                    }
+                ) { Text("Guardar") }
+            },
+            dismissButton = {
+                TextButton(onClick = { mostrarFormulario = false }) { Text("Cancelar") }
+            }
+        )
     }
 }
 
@@ -587,7 +689,7 @@ fun PerfilVendedorScreen(navController: NavController, viewModel: GuardianViewMo
                             )
                         }
                         Text(sesion.nombre.ifBlank { "Usuario" }, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                        Etiqueta(rol?.etiqueta?.uppercase() ?: "SIN ROL", ColorEnRuta)
+                        Etiqueta(rol?.etiqueta?.uppercase() ?: "USUARIO", ColorEnRuta)
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Default.Email, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(Modifier.width(6.dp))
@@ -698,7 +800,14 @@ private fun CabeceraApp(navController: NavController) {
         }
         Spacer(Modifier.width(8.dp))
         IconButton(
-            onClick = { navController.navigate(Rutas.PERFIL) },
+            onClick = {
+                // Misma navegación que la barra inferior, para que el Dashboard se pueda volver a abrir
+                navController.navigate(Rutas.PERFIL) {
+                    popUpTo(Rutas.INICIO) { saveState = true }
+                    launchSingleTop = true
+                    restoreState = true
+                }
+            },
             modifier = Modifier
                 .clip(RoundedCornerShape(10.dp))
                 .background(Color(0xFF111827))

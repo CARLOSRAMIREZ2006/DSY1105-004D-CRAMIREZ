@@ -131,8 +131,9 @@ class GuardianViewModel(
     // Login local/simulado (la app no tiene backend): valida el formato y guarda la sesión
     fun iniciarSesion(correo: String, clave: String, recordar: Boolean, onExito: () -> Unit) {
         if (!validarLogin(correo, clave)) return
-        // Solo entran las cuentas de prueba del enunciado; cualquier otra combinación se rechaza
-        if (CuentasPrueba.buscar(correo, clave) == null) {
+        // Entran las cuentas de prueba del enunciado y los usuarios registrados; el resto se rechaza
+        val esCuentaPrueba = CuentasPrueba.buscar(correo, clave) != null
+        if (!esCuentaPrueba && !prefs.verificarCredencial(correo, clave)) {
             _erroresLogin.value = ErroresLogin(general = "Correo o contraseña incorrectos")
             return
         }

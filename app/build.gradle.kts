@@ -8,7 +8,7 @@ plugins {
 
 android {
     namespace = "com.example.insertcode"
-    compileSdk = 36
+    compileSdk = 35
 
     // Llave de depuración COMPARTIDA: todos los PCs firman con la misma huella SHA-1
     signingConfigs {

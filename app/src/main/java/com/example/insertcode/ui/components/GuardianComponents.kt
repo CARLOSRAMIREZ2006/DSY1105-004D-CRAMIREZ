@@ -79,7 +79,7 @@ fun BarraInferior(
         ItemBarra(Rutas.PEDIDOS, "Pedidos", Icons.Default.ShoppingCart),
         ItemBarra(Rutas.CATALOGO, "Catálogo", Icons.Default.Storefront),
         ItemBarra(Rutas.RUTA_GPS, "Ruta GPS", Icons.Default.LocationOn),
-        ItemBarra(Rutas.ROOM_SYNC, "Room / Sync", Icons.Default.Storage)
+        ItemBarra(Rutas.PERFIL, "Perfil", Icons.Default.Person)
     )
     NavigationBar {
         items.forEach { item ->

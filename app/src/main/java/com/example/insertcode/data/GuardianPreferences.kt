@@ -14,6 +14,24 @@ import kotlinx.coroutines.flow.map
 // (reutiliza la extensión Context.dataStore declarada en EstadoDataStore.kt)
 class GuardianPreferences(private val context: Context) {
 
+    // ---------- Credenciales de usuarios registrados ----------
+    // Mismo archivo que usa PreferencesManager: se guarda solo el hash SHA-256 de la clave
+    private val credencialesPrefs = context.getSharedPreferences("credenciales_locales", Context.MODE_PRIVATE)
+
+    private fun hashClave(clave: String): String =
+        java.security.MessageDigest.getInstance("SHA-256")
+            .digest(clave.toByteArray())
+            .joinToString("") { "%02x".format(it.toInt() and 0xff) }
+
+    fun guardarCredencial(correo: String, clave: String) {
+        credencialesPrefs.edit().putString(correo.trim().lowercase(), hashClave(clave)).apply()
+    }
+
+    fun verificarCredencial(correo: String, clave: String): Boolean {
+        val guardado = credencialesPrefs.getString(correo.trim().lowercase(), null) ?: return false
+        return guardado == hashClave(clave)
+    }
+
     private val NOMBRE = stringPreferencesKey("sesion_nombre")
     private val CORREO = stringPreferencesKey("sesion_correo")
     private val FOTO = stringPreferencesKey("sesion_foto")

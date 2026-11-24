@@ -157,6 +157,7 @@ class UsuarioViewModel(
                 fechaRegistro = Date()
             )
             repository.insertar(entidad)
+            preferences.guardarCredencial(s.correo, s.clave)
             onGuardado()
         }
     }

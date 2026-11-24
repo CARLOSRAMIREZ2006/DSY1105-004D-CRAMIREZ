@@ -22,6 +22,7 @@ import com.example.insertcode.model.RolUsuario
 import com.example.insertcode.model.Sesion
 import com.example.insertcode.model.SeveridadEvento
 import com.example.insertcode.util.inicioDelDia
+import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -156,6 +157,7 @@ class GuardianViewModel(
     fun cerrarSesion(onListo: () -> Unit) {
         viewModelScope.launch {
             prefs.limpiarSesion()
+            FirebaseAuth.getInstance().signOut()
             onListo()
         }
     }

@@ -220,7 +220,7 @@ fun LoginScreen(
                 onClick = {
                     googleCargando = true
                     mensajeGoogle = null
-                    lanzadorGoogle.launch(GoogleSignInHelper.clienteGoogle(context, webClientId).signInIntent)
+                    GoogleSignInHelper.lanzarSelectorDeCuentas(context, webClientId) { lanzadorGoogle.launch(it) }
                 }
             )
             mensajeGoogle?.let {

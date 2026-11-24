@@ -39,6 +39,17 @@ object GoogleSignInHelper {
         return GoogleSignIn.getClient(context, opciones)
     }
 
+    // Cierra la sesión de Google guardada en el dispositivo y luego abre el selector de cuentas,
+    // para que siempre se pueda elegir con qué cuenta entrar
+    fun lanzarSelectorDeCuentas(
+        context: Context,
+        webClientId: String,
+        lanzar: (Intent) -> Unit
+    ) {
+        val cliente = clienteGoogle(context, webClientId)
+        cliente.signOut().addOnCompleteListener { lanzar(cliente.signInIntent) }
+    }
+
     // Lee la respuesta del selector y crea la sesión en Firebase
     suspend fun procesarResultado(data: Intent?): ResultadoGoogle {
         return try {
